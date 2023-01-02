@@ -1,0 +1,18 @@
+name: get-ancient-vf
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+  - genomewalker
+dependencies:
+  - python>=3.7,<=3.9
+  - Cython>=0.29.24
+  - biopython>=1.79
+  - mmseqs2>=13.45111
+  - hmmer>=3.3.2
+  - bbmap>=38.93
+  - vsearch>=2.19.0
+  - seqkit
+  - pip
+  - pip:
+      - x-filter>=0.0.15

@@ -1,0 +1,41 @@
+{% set setup_data = load_setup_py_data() %}
+package:
+  name: get-ancient-vf
+  version: {{ setup_data['version'] }}
+
+source:
+  git_rev: {{ setup_data['version'] }}
+  git_url: https://github.com/genomewalker/get-ancient-vf.git
+
+build:
+  number: 0
+  skip: true  # [win and py27 or win32]
+  script: {{ PYTHON }} -m pip install . --no-deps -vv
+
+requirements:
+  build:
+    - python==3.9
+    - setuptools>=18.0
+    - pip
+    - Cython>=0.29.24
+  run:
+    - python==3.9
+    - Cython>=0.29.24
+    - pip
+    - pandas>=1.3.4
+    - scipy>=1.7.3
+    - tqdm>=4.62.3
+    - numpy>=1.21.4
+    - pyrle>=0.0.33
+    - pyranges>=0.0.112
+    - datatable
+    
+test:
+  commands:
+    - getVF -h
+
+about:
+  home: https://github.com/genomewalker/get-ancient-vf
+  summary: "A simple tool to filter BLASTx m8 files using the FAMLI algorithm"
+  license: {{ setup_data['license'] }}
+  license_file: LICENSE
