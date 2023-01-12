@@ -96,7 +96,7 @@ def dereplicate_reads(
     proc = subprocess.Popen(
         [
             derep_bin,
-            "--derep_fulllength",
+            "--fastx_uniques",
             reads,
             "--output",
             output,
