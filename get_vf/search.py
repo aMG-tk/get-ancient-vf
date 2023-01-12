@@ -8,7 +8,6 @@ import http.client
 from Bio import SeqIO, AlignIO, Seq
 import numpy as np
 from scipy import stats
-from ete3 import Tree
 import subprocess
 import re
 import io
