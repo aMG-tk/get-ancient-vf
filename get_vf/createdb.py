@@ -1,11 +1,11 @@
-from distutils.log import info
 from operator import gt
 from unittest import getTestCaseNames
 import pandas as pd
 import numpy as np
 import requests
 import io
-import os, sys
+import os
+import sys
 import tqdm
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -16,8 +16,112 @@ import time
 import tarfile
 import shutil
 import pathlib
-from get_vf.defaults import gtdb_releases, info_file_columns
+from get_vf.defaults import CORE_DB, FULL_DB
 import logging
+from datetime import date
+import gzip
+from Bio import SeqIO
+import subprocess
+
+
+def create_mmseqs_db(db_dir, db, faa, mmseqs_bin):
+    # Create mmseqs2 db
+    mmseqs_dir = pathlib.Path(db_dir, "mmseqs")
+    mmseqs_db = pathlib.Path(mmseqs_dir, f"{db}-db")
+    if not os.path.exists(mmseqs_db):
+        create_folder(mmseqs_dir)
+        create_mmseqs_db_worker(
+            faa=faa,
+            mmseqs_bin=mmseqs_bin,
+            mmseqs_db=mmseqs_db,
+            db=db,
+        )
+    else:
+        logging.info("MMseqs2 DB already built. Skipping creating DB.")
+
+
+def create_mmseqs_db_worker(faa, mmseqs_bin, mmseqs_db, db):
+    logging.info(f"Creating aa MMseqs2 DB for {db} VFDB")
+    proc = subprocess.Popen(
+        [
+            mmseqs_bin,
+            "createdb",
+            faa,
+            mmseqs_db,
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        encoding="utf-8",
+    )
+    stdout, stderr = proc.communicate()
+    if proc.returncode != 0:
+        # rgx = re.compile("ERROR")
+        # for line in stdout.splitlines():
+        #     if rgx.search(line):
+        #         error = line.replace("ERROR: ", "")
+        logging.error(f"Error creating mmseqs DB for {marker}")
+        logging.error(stderr)
+        exit(1)
+
+
+def parse_header(header):
+    # Use a regular expression to extract the gene name, description, virulence factor, and organism
+    match = re.match(r"(\S+)\s(\S.+)\[(\S.+)\]\s\[(\S.+)\]", header)
+
+    # If the regular expression matched, return the extracted information
+    if match:
+        return (match.group(1), match.group(2), match.group(3), match.group(4))
+    # If the regular expression did not match, return None
+    else:
+        return None
+
+
+# def create_output_files(outdir):
+#     # create output files
+#     out_files = {
+#         "core": {
+#             "out_tsv": f"{outdir}/core/VFDB.metadata.tsv.gz",
+#             "out_fasta": f"{outdir}/core/VFDB.fasta.gz",
+#         },
+#         "full": {
+#             "out_tsv": f"{outdir}/full/VFDB.metadata.tsv.gz",
+#             "out_fasta": f"{outdir}/full/VFDB.full.fasta.gz",
+#         },
+#     }
+#     return out_files
+
+
+def create_db_files(input, faa, metadata):
+    with open(input, "rb") as handle:
+        # Read the first two bytes of the file
+        magic = handle.read(2)
+
+        # If the first two bytes are the GZIP magic number, the file is compressed
+        if magic == b"\x1f\x8b":
+            mode = "rt"
+        else:
+            mode = "r"
+
+        # Seek back to the beginning of the file
+        handle.seek(0)
+
+        # Open the file with gzip.open, using the determined mode
+        with gzip.open(handle, mode) as handle:
+            # Open the output file
+            with gzip.open(metadata, "wt") as output_tsv, gzip.open(
+                faa, "wt"
+            ) as fasta_output:
+                # Loop through the sequences in the FASTA file
+                for record in SeqIO.parse(handle, "fasta"):
+                    # Parse the header and extract the information
+                    info = parse_header(record.description)
+                    # If the header was successfully parsed, write the extracted information to the output file
+                    if info:
+                        string = f"{info[0]}\t{info[2]}\t{info[1]}\t{info[3]}\n"
+                        record.id = info[0]
+                        record.description = ""
+                        output_tsv.write(string)
+                        SeqIO.write(record, handle=fasta_output, format="fasta")
 
 
 def get_data(url):
@@ -107,11 +211,10 @@ log = logging.getLogger("my_logger")
 def createdb(args):
     # check if output directory exists if not create it else delete it
     outdir = f"{args.createdb_output}/DB"
-    faa_dir = f"{outdir}/faa"
-    fna_dir = f"{outdir}/fna"
-    hmm_dir = f"{outdir}/hmm"
-    metadata_dir = f"{outdir}/metadata"
-    tree_dir = f"{outdir}/tree"
+    core_dir = f"{outdir}/core"
+    full_dir = f"{outdir}/full"
+    # out_files = create_output_files(outdir)
+
     # check if output directory exists if not create it
     create_folder(outdir)
     # check if the subfolders are in place, if they exist remove
@@ -119,16 +222,13 @@ def createdb(args):
     # create_folder_and_delete(fna_dir)
     # create_folder_and_delete(hmm_dir)
     if args.recreate:
-        create_folder_and_delete(metadata_dir)
-        create_folder_and_delete(tree_dir)
-        delete_folder(faa_dir)
-        delete_folder(fna_dir)
-        delete_folder(hmm_dir)
+        delete_folder(core_dir)
+        delete_folder(full_dir)
+        create_folder(core_dir)
+        create_folder(full_dir)
     else:
-        create_folder_and_delete(metadata_dir)
-        create_folder_and_delete(tree_dir)
-        # create_folder(faa_dir)
-        # create_folder(fna_dir)
+        create_folder(core_dir)
+        create_folder(full_dir)
 
     # create a temporary directory to store the downloaded files
     if args.createdb_tmp is None:
@@ -137,152 +237,44 @@ def createdb(args):
         tmp_dir = args.createdb_tmp
     create_folder(tmp_dir)
 
-    # list files in tmp dir
-    files = os.listdir(tmp_dir)
-
-    # Define URLs
-    base_url = gtdb_releases["latest"]["url"]
-    version_url = f"{base_url}/VERSION"
-    tree_url = f"{base_url}/{gtdb_releases['latest']['tree']}"
-    marker_url = f"{base_url}/genomic_files_reps/{gtdb_releases['latest']['markers']}"
-    gtdbtk_url = f"{base_url}/auxillary_files/{gtdb_releases['latest']['gtdbtk']}"
-    info_url = f"{base_url}/auxillary_files/{gtdb_releases['latest']['info']}"
-    # Get the version number of latest release
-    log.info("Retrieving GTDB version information")
+    # Get the date of the latest release
+    today_date = date.today()
     version_file = pathlib.Path(f"{outdir}/version")
-    r = get_data(version_url)
-    rgx = re.compile("^v")
     with open(version_file, "w") as f:
-        for row in r:
-            if rgx.search(row):
-                gtdb_version = row.replace("\n", "")
-                gtdb_version = gtdb_version.replace("v", "")
-            f.write(row)
-    logging.info(f"Using GTDB version {gtdb_version}")
+        f.write(f"{today_date}")
+    # Download the files to the tmp directory
+    log.info("Downloading VFDB core database")
+    download(CORE_DB["url"], tmp_dir)
+    log.info("Downloading VFDB full database")
+    download(FULL_DB["url"], tmp_dir)
 
-    # Download GTDB tree
-    log.info(f"Retrieving GTDB v{gtdb_version} tree...")
-    tree_file = pathlib.Path(f"{tree_dir}/{gtdb_releases['latest']['tree']}")
-
-    if os.path.exists(tree_file):
-        log.info(f"{tree_file} already exists. Skipping...")
-    else:
-        download(tree_url, tree_dir)
-
-    # Download the marker genes from the GTDB website
-    log.info(f"Downloading marker genes...")
-    marker_file = pathlib.Path(f"{tmp_dir}/{gtdb_releases['latest']['markers']}")
-    marker_dir = pathlib.Path(f"{tmp_dir}/bac120_marker_genes_reps_r{gtdb_version}")
-    # Check if file exists if not download it
-    if not os.path.exists(marker_file):
-        download(marker_url, dest_folder=tmp_dir)
-    else:
-        log.info(
-            f"File {gtdb_releases['latest']['markers']} already exists. Skipping..."
-        )
-
-    # if os.path.exists(fna_dir) and args.recreate:
-    #     log.info(f"{fna_dir} already exists. Deleting...")
-    #     shutil.rmtree(fna_dir)
-
-    # if os.path.exists(faa_dir) and args.recreate:
-    #     log.info(f"{faa_dir} already exists. Deleting...")
-    #     shutil.rmtree(faa_dir)
-
-    # check if {tmp_dir}/bac120_marker_genes_reps_r{gtdb_version} folder exists if not delete it
-
-    if os.path.exists(marker_dir):
-        log.info(f"{marker_file} already exists. Deleting...")
-        shutil.rmtree(marker_dir)
-    # Extract the marker genes and MSA files
-    if os.path.exists(faa_dir) and os.path.exists(fna_dir):
-        log.info(f"{faa_dir} already exists. Skipping...")
-    else:
-        log.info(f"Extracting {tmp_dir}/{gtdb_releases['latest']['markers']}")
-        # delete folder
-        if os.path.exists(faa_dir):
-            shutil.rmtree(faa_dir)
-        if os.path.exists(fna_dir):
-            shutil.rmtree(fna_dir)
-        with tarfile.open(marker_file) as tar:
-            for member in tar.getmembers():
-                if member.name.endswith(".faa"):
-                    tar.extract(member, path=tmp_dir)
-                elif member.name.endswith(".fna"):
-                    tar.extract(member, path=tmp_dir)
-                else:
-                    continue
-        shutil.move(
-            f"{tmp_dir}/bac120_marker_genes_reps_r{gtdb_version}/fna", f"{outdir}"
-        )
-        shutil.move(
-            f"{tmp_dir}/bac120_marker_genes_reps_r{gtdb_version}/faa", f"{outdir}"
-        )
-
-    # Download the HMM files from the GTDB website
-    gtdbtk_file = pathlib.Path(f"{tmp_dir}/{gtdb_releases['latest']['gtdbtk']}")
-    gtdbtk_dir = pathlib.Path(f"{tmp_dir}/release{gtdb_version}_v2")
-    # Check if file exists if not download it
-    if not os.path.exists(gtdbtk_file):
-        log.info(f"Downloading {gtdb_releases['latest']['gtdbtk']}...")
-        download(gtdbtk_url, dest_folder=tmp_dir)
-    else:
-        log.info(
-            f"File {gtdb_releases['latest']['gtdbtk']} already exists. Skipping..."
-        )
-
-    if os.path.exists(hmm_dir) and is_folder_empty(hmm_dir):
-        log.info(f"{hmm_dir} already exists but is empty. Deleting...")
-        delete_folder(hmm_dir)
-
-    if not os.path.exists(hmm_dir):
-        create_folder(hmm_dir)
-        if os.path.exists(gtdbtk_dir):
-            log.info(f"{gtdbtk_dir} already exists. Deleting...")
-            shutil.rmtree(gtdbtk_dir)
-        # Extract the HMM files
-        log.info(f"Extracting HMMs from {tmp_dir}/{gtdb_releases['latest']['gtdbtk']}")
-        with tarfile.open(gtdbtk_file) as tar:
-            for member in tar.getmembers():
-                if member.name.endswith(".hmm") and "individual_hmms" in member.name:
-                    tar.extract(member, path=tmp_dir)
-                    shutil.move(
-                        f"{tmp_dir}/{member.name}",
-                        f"{hmm_dir}",
-                    )
-                elif member.name.endswith(".HMM") and "individual_hmms" in member.name:
-                    tar.extract(member, path=tmp_dir)
-                    fname = pathlib.Path(member.name).with_suffix(".hmm").name
-                    fname = os.path.join(hmm_dir, fname)
-                    shutil.move(
-                        f"{tmp_dir}/{member.name}",
-                        fname,
-                    )
-                else:
-                    continue
-    else:
-        log.info(f"{hmm_dir} already exists. Skipping...")
-
-    # Generate info file
-    log.info(f"Downloading info file...")
-    # Download the marker genes from the GTDB website
-    info_file = pathlib.Path(f"{tmp_dir}/{gtdb_releases['latest']['info']}")
-    info_file_out = pathlib.Path(
-        f"{metadata_dir}/{gtdb_releases['latest']['info_out']}"
+    # Create metadata file
+    log.info("Processing files")
+    create_db_files(
+        input=f"{tmp_dir}/{CORE_DB['filename']}",
+        faa=pathlib.Path(outdir, CORE_DB["faa"]),
+        metadata=pathlib.Path(outdir, CORE_DB["metadata"]),
     )
-    # Check if file exists if not download it
-    if not os.path.exists(info_file_out):
-        download(info_url, dest_folder=tmp_dir)
-    else:
-        log.info(
-            f"File {gtdb_releases['latest']['markers']} already exists. Skipping..."
-        )
-    # read the info file
-    info_df = pd.read_csv(info_file, sep="\t")
-    info_df.columns = info_file_columns
-    # split column marker into db and marker
-    dbs = info_df["marker"].str.split("_", expand=True)[0]
-    info_df["marker"] = info_df["marker"].str.split("_", expand=True)[1]
-    info_df.insert(0, "db", dbs)
-    log.info(f"Writing info file to {info_file_out}")
-    info_df.to_csv(info_file_out, sep="\t", index=False)
+    create_db_files(
+        input=f"{tmp_dir}/{FULL_DB['filename']}",
+        faa=pathlib.Path(outdir, FULL_DB["faa"]),
+        metadata=pathlib.Path(outdir, FULL_DB["metadata"]),
+    )
+    create_mmseqs_db(
+        db_dir=core_dir,
+        db="core",
+        faa=pathlib.Path(outdir, CORE_DB["faa"]),
+        mmseqs_bin=args.mmseqs_bin,
+    )
+    create_mmseqs_db(
+        db_dir=core_dir,
+        db="full",
+        faa=pathlib.Path(outdir, FULL_DB["faa"]),
+        mmseqs_bin=args.mmseqs_bin,
+    )
+
+    # Delete the temporary directory
+    log.info("Removing temporary directory")
+    delete_folder(tmp_dir)
+
+    log.info("Done")

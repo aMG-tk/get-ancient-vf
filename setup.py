@@ -8,7 +8,6 @@ requirements = [
     "numpy>=1.21.4",
     "biopython>=1.79",
     "requests>=2.26.0",
-    "ete3>=3.1.2",
 ]
 
 setup(
@@ -20,7 +19,7 @@ setup(
     name="get-ancient-vf",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    description="A simple tool to map ancient reads against GTDB marker genes and generate miscellaneous files.",
+    description="A simple tool to map ancient reads against VFDB.",
     license="GNUv3",
     author="Antonio Fernandez-Guerra",
     author_email="antonio@metagenomics.eu",

@@ -12,7 +12,6 @@ see <https://www.gnu.org/licenses/>.
 """
 
 import logging
-from get_vf.fetch import fetch_data
 from get_vf.createdb import createdb
 from get_vf.utils import (
     get_arguments,
@@ -36,8 +35,6 @@ def main():
     )
     if args.action == "createdb":
         createdb(args)
-    elif args.action == "fetch":
-        fetch_data(args)
     elif args.action == "search":
         search_markers(args)
 

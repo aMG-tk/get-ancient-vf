@@ -37,7 +37,7 @@ def extend_reads(
     extend_memory,
     tmp_dir,
     threads,
-    marker,
+    db,
     log_file,
 ):
     if extend_memory is None:
@@ -78,14 +78,14 @@ def extend_reads(
         # for line in stdout.splitlines():
         #     if rgx.search(line):
         #         error = line.replace("ERROR: ", "")
-        logging.error(f"Error extending reads for marker: {marker}")
+        logging.error(f"Error extending reads for DB: {db}")
         logging.error(stderr)
         exit(1)
     return output
 
 
 def dereplicate_reads(
-    derep_bin, reads, output, tmp_dir, log_file, marker, derep_min_length
+    derep_bin, reads, output, tmp_dir, log_file, db, derep_min_length
 ):
     # vsearch --derep_fulllength ${i} --output - --minseqlength 30 --strand both
     output = pathlib.Path(tmp_dir, output)
@@ -120,16 +120,16 @@ def dereplicate_reads(
         # for line in stdout.splitlines():
         #     if rgx.search(line):
         #         error = line.replace("ERROR: ", "")
-        logging.error(f"Error dereplicating reads for marker: {marker}")
+        logging.error(f"Error dereplicating reads for DB: {db}")
         logging.error(stderr)
         exit(1)
     return output
 
 
-def search_marker(
+def search_db(
     reads,
-    marker,
-    marker_db,
+    db,
+    vfdb_db,
     output,
     tmp_dir,
     log_file,
@@ -142,18 +142,18 @@ def search_marker(
     ancient,
     threads,
 ):
-    tmp = pathlib.Path(tmp_dir, "mmseqs", marker)
+    tmp = pathlib.Path(tmp_dir, "mmseqs", db)
     create_folder(tmp)
     if output.exists():
         output.unlink()
-    logging.info(f"Searching reads against marker {marker}")
+    logging.info(f"Searching reads against DB {db}")
     if ancient:
         logging.info("::: Using MMseqs2 parameters for aDNA")
         cmd = [
             mmseqs_bin,
             "easy-search",
             reads,
-            marker_db,
+            vfdb_db,
             output,
             tmp,
             "--min-length",
@@ -190,7 +190,7 @@ def search_marker(
             mmseqs_bin,
             "easy-search",
             reads,
-            marker_db,
+            vfdb_db,
             output,
             tmp,
             "--min-length",
@@ -225,7 +225,7 @@ def search_marker(
         # for line in stdout.splitlines():
         #     if rgx.search(line):
         #         error = line.replace("ERROR: ", "")
-        logging.error(f"Error searching reads for marker: {marker}")
+        logging.error(f"Error searching reads for DB: {db}")
         logging.error(stderr)
         exit(1)
     delete_folder(tmp)
@@ -236,7 +236,7 @@ def filter_results(
     xfilter_bin,
     results,
     prefix,
-    marker,
+    db,
     log_file,
     n_iters,
     evalue,
@@ -251,7 +251,7 @@ def filter_results(
     threads,
     output,
 ):
-    logging.info(f"Filtering {marker} BLASTx results")
+    logging.info(f"Filtering VFDB {db} BLASTx results")
     if trim:
         cmd = [
             xfilter_bin,
@@ -327,18 +327,16 @@ def filter_results(
         # for line in stdout.splitlines():
         #     if rgx.search(line):
         #         error = line.replace("ERROR: ", "")
-        logging.error(f"Error filtering BLASTx results for marker: {marker}")
+        logging.error(f"Error filtering BLASTx results for DB: {db}")
         # logging.error(stderr)
         exit(1)
     # gzip output file if exists
 
 
-def extract_reads(
-    results, marker, output, threads, reads, extract_bin, tmp_dir, log_file
-):
-    logging.info(f"Extracting reads for marker {marker}")
+def extract_reads(results, db, output, threads, reads, extract_bin, tmp_dir, log_file):
+    logging.info(f"Extracting reads for DB {db}")
     results = pd.read_csv(results, sep="\t")
-    name_lst = pathlib.Path(tmp_dir, f"{marker}-names.tsv")
+    name_lst = pathlib.Path(tmp_dir, f"{db}-names.tsv")
     results[["queryId"]].to_csv(name_lst, sep="\t", index=False, header=False)
     cmd = [
         extract_bin,
@@ -368,13 +366,13 @@ def extract_reads(
         # for line in stdout.splitlines():
         #     if rgx.search(line):
         #         error = line.replace("ERROR: ", "")
-        logging.error(f"Error extracting reads for marker: {marker}")
+        logging.error(f"Error extracting reads for DB: {db}")
         logging.error(stderr)
         exit(1)
     return output
 
 
-def search_markers(args):
+def search_db(args):
 
     if args.no_derep:
         derep = False
@@ -391,37 +389,35 @@ def search_markers(args):
     else:
         fltr = True
 
-    marker_db = pathlib.Path(
+    vfdb_db = pathlib.Path(
         args.db_dir,
-        "markers",
-        args.marker,
-        str(args.zscore),
+        args.db,
         "mmseqs",
-        f"{args.marker}-db",
+        f"{args.db}-db",
     )
-    if not os.path.exists(marker_db):
+    if not os.path.exists(vfdb_db):
         logging.error(
-            f"The DB for the marker {args.marker} does not exist. Please run the fetch subcommand to create it."
+            f"The DB for the {args.db} VFDB does not exist. Please run the createdb subcommand to create it."
         )
         exit(1)
     else:
-        logging.info(f"DB for the marker {args.marker} found")
+        logging.info(f"DB for the {args.db} VFDB found")
 
     logging.info(f"Creating output and tmp folders")
     date_dir = get_date_dir()
 
-    output = pathlib.Path(args.output, args.marker)
+    output = pathlib.Path(args.output, args.db)
     create_folder(output)
     if args.tmp is None:
         tmp_dir = pathlib.Path(output, "tmp")
         create_folder(tmp_dir)
     else:
-        tmp_dir = pathlib.Path(args.tmp, args.marker, date_dir, "tmp")
+        tmp_dir = pathlib.Path(args.tmp, args.db, date_dir, "tmp")
         create_folder(tmp_dir)
 
     fastq = is_fastq(args.input)
     output_files = create_output_files(
-        prefix=args.prefix, input=args.input, fastq=fastq, marker=args.marker
+        prefix=args.prefix, input=args.input, fastq=fastq, db=args.db
     )
 
     log_dir = pathlib.Path(output, "logs")
@@ -441,7 +437,7 @@ def search_markers(args):
                 extend_memory=args.extend_memory,
                 threads=args.threads,
                 tmp_dir=tmp_dir,
-                marker=args.marker,
+                db=args.db,
                 log_file=extend_log_file,
             )
         else:
@@ -453,7 +449,7 @@ def search_markers(args):
     if extend and os.path.exists(extended_reads) and derep:
         dereplicate_reads(
             reads=extended_reads,
-            marker=args.marker,
+            db=args.db,
             output=output_files["derep_reads"],
             derep_bin=args.derep_bin,
             tmp_dir=tmp_dir,
@@ -463,7 +459,7 @@ def search_markers(args):
     elif derep:
         dereplicate_reads(
             reads=args.input,
-            marker=args.marker,
+            db=args.db,
             output=output_files["derep_reads"],
             derep_bin=args.derep_bin,
             tmp_dir=tmp_dir,
@@ -482,10 +478,10 @@ def search_markers(args):
     results_gz = pathlib.Path(output, output_files["results_gz"])
     search_log_file = pathlib.Path(log_dir, output_files["results_log"])
     if not os.path.exists(results_gz):
-        search_marker(
+        search_db(
             reads=reads,
-            marker=args.marker,
-            marker_db=marker_db,
+            db=args.db,
+            vfdb_db=vfdb_db,
             output=results,
             tmp_dir=tmp_dir,
             log_file=search_log_file,
@@ -508,8 +504,8 @@ def search_markers(args):
             shutil.copyfileobj(f_in, f_out)
         results.unlink()
     # filter
-    extract_log_file = pathlib.Path(log_dir, output_files["reads_marker_log"])
-    reads_marker = pathlib.Path(output, output_files["reads_marker"])
+    extract_log_file = pathlib.Path(log_dir, output_files["reads_db_log"])
+    reads_db = pathlib.Path(output, output_files["reads_db"])
     if fltr and os.path.exists(results_gz):
         filter_log_file = pathlib.Path(log_dir, output_files["results_filtered_log"])
         filter_results(
@@ -525,7 +521,7 @@ def search_markers(args):
             depth=args.depth,
             depth_evenness=args.depth_evenness,
             trim=args.trim,
-            marker=args.marker,
+            db=args.db,
             threads=args.threads,
             xfilter_bin=args.xfilter_bin,
             prefix=output_files["results_filtered_prefix"],
@@ -540,8 +536,8 @@ def search_markers(args):
         if os.path.exists(mm_file):
             extract_reads(
                 results=mm_file,
-                marker=args.marker,
-                output=reads_marker,
+                db=args.db,
+                output=reads_db,
                 threads=args.threads,
                 reads=args.input,
                 extract_bin=args.extract_bin,
@@ -552,8 +548,8 @@ def search_markers(args):
         if os.path.exists(results_gz):
             extract_reads(
                 results=results_gz,
-                marker=args.marker,
-                output=reads_marker,
+                db=args.db,
+                output=reads_db,
                 threads=args.threads,
                 reads=args.input,
                 extract_bin=args.extract_bin,
