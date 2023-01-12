@@ -15,4 +15,4 @@ dependencies:
   - seqkit
   - pip
   - pip:
-      - x-filter>=0.0.15
+      - x-filter>=1.0.5
