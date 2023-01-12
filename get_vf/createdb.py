@@ -59,7 +59,7 @@ def create_mmseqs_db_worker(faa, mmseqs_bin, mmseqs_db, db):
         # for line in stdout.splitlines():
         #     if rgx.search(line):
         #         error = line.replace("ERROR: ", "")
-        logging.error(f"Error creating mmseqs DB for {marker}")
+        logging.error(f"Error creating mmseqs DB for {db}")
         logging.error(stderr)
         exit(1)
 

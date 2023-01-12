@@ -16,7 +16,7 @@ from get_vf.createdb import createdb
 from get_vf.utils import (
     get_arguments,
 )
-from get_vf.search import search_markers
+from get_vf.search import search_db
 
 log = logging.getLogger("my_logger")
 
@@ -36,7 +36,7 @@ def main():
     if args.action == "createdb":
         createdb(args)
     elif args.action == "search":
-        search_markers(args)
+        search_db(args)
 
 
 if __name__ == "__main__":
