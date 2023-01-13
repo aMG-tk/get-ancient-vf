@@ -632,30 +632,30 @@ def search_db(args):
         if not os.path.exists(cov_file) or not os.path.exists(mm_file):
             logging.error("Cannot find filtered results. Exiting.")
             exit(1)
-
-        if os.path.exists(mm_file):
-            extract_reads(
-                results=mm_file,
-                db=args.db,
-                output=reads_db,
-                threads=args.threads,
-                reads=args.input,
-                extract_bin=args.extract_bin,
-                tmp_dir=tmp_dir,
-                log_file=extract_log_file,
-            )
-    else:
-        if os.path.exists(results_gz):
-            extract_reads(
-                results=results_gz,
-                db=args.db,
-                output=reads_db,
-                threads=args.threads,
-                reads=args.input,
-                extract_bin=args.extract_bin,
-                tmp_dir=tmp_dir,
-                log_file=extract_log_file,
-            )
+        if args.extract:
+            if os.path.exists(mm_file):
+                extract_reads(
+                    results=mm_file,
+                    db=args.db,
+                    output=reads_db,
+                    threads=args.threads,
+                    reads=args.input,
+                    extract_bin=args.extract_bin,
+                    tmp_dir=tmp_dir,
+                    log_file=extract_log_file,
+                )
+        else:
+            if os.path.exists(results_gz):
+                extract_reads(
+                    results=results_gz,
+                    db=args.db,
+                    output=reads_db,
+                    threads=args.threads,
+                    reads=args.input,
+                    extract_bin=args.extract_bin,
+                    tmp_dir=tmp_dir,
+                    log_file=extract_log_file,
+                )
 
     # Clean up temporary
     if args.no_keep and os.path.exists(tmp_dir):

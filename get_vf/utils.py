@@ -283,6 +283,7 @@ help_msg = {
     "debug": f"Print debug messages",
     "version": f"Print program version",
     "trim": f"Deactivate the trimming for the coverage calculations",
+    "extract": f"Extract the reads that match the VFDB",
     "extract_bin": "Path to the the executable for the read extraction step",
     "keep": "Keep temporary files",
 }
@@ -729,6 +730,13 @@ def get_arguments(argv=None):
         dest="extract_bin",
         help=help_msg["extract_bin"],
     )
+    extract_args.add_argument(
+        "--extract",
+        dest="extract",
+        action="store_true",
+        help=help_msg["extract"],
+        default=argparse.SUPPRESS,
+    )
     args = parser.parse_args(None if sys.argv[1:] else ["-h"])
 
     if not hasattr(args, "no_derep"):
@@ -749,6 +757,8 @@ def get_arguments(argv=None):
         args.local_db = False
     if not hasattr(args, "agg"):
         args.agg = True
+    if not hasattr(args, "extract"):
+        args.extract = False
 
     if args.action is not None and len(sys.argv) == 2:
         args = parser.parse_args([args.action, "-h"])
