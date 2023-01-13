@@ -720,7 +720,7 @@ def get_arguments(argv=None):
     if not hasattr(args, "trim"):
         args.trim = True
     if not hasattr(args, "ancient"):
-        args.ancient = True
+        args.ancient = False
     if not hasattr(args, "no_keep"):
         args.no_keep = True
     if not hasattr(args, "recreate"):
