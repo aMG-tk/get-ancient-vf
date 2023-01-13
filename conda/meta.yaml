@@ -29,6 +29,7 @@ requirements:
     - pyrle>=0.0.33
     - pyranges>=0.0.112
     - datatable
+    - biopython>=1.79
     
 test:
   commands:
