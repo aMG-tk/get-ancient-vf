@@ -487,7 +487,7 @@ def search_db(args):
         f"{args.db}-db",
     )
 
-    metadata = pathlib.Path(args.db_dir, args.db, VFDB[args.db]["metadata"])
+    metadata = pathlib.Path(args.db_dir, args.db, VFDB[args.db]["metadata"]).resolve()
     if not os.path.exists(vfdb_db):
         logging.error(
             f"The DB for the {args.db} VFDB does not exist. Please run the createdb subcommand to create it."
