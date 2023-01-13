@@ -90,7 +90,8 @@ def dereplicate_reads(
     tmp_dir,
     log_file,
     db,
-    derep_min_length,
+    # derep_min_length,
+    threads
 ):
     # vsearch --derep_fulllength ${i} --output - --minseqlength 30 --strand both
     output = pathlib.Path(tmp_dir, output)
@@ -98,7 +99,7 @@ def dereplicate_reads(
         logging.info("Dereplicated reads already found. Skipping.")
         return output
     if derep_bin == "vsearch":
-        logging.info(f"Dereplicating reads [length:{derep_min_length}]")
+        logging.info(f"Dereplicating reads with {derep_bin}")
         proc = subprocess.Popen(
             [
                 derep_bin,
@@ -108,8 +109,8 @@ def dereplicate_reads(
                 output,
                 "--strand",
                 "both",
-                "--minseqlength",
-                str(derep_min_length),
+                # "--minseqlength",
+                # str(derep_min_length),
             ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -117,10 +118,23 @@ def dereplicate_reads(
         )
         stdout, stderr = proc.communicate()
 
+    elif derep_bin == "seqkit":
+        logging.info(f"Dereplicating reads with {derep_bin}]")
+        proc = subprocess.Popen(
+            [
+                derep_bin,
+                "rmdup",
+                "-s",
+                reads,
+                "-j",
+                str(threads),
+                "-o",
+                output,
+            ],
+
         with open(log_file, "w") as f:
             for row in stderr.split("\n"):
                 f.write(row + "\n")
-
         if proc.returncode != 0:
             # rgx = re.compile("ERROR")
             # for line in stdout.splitlines():
@@ -460,7 +474,8 @@ def search_db(args):
             derep_bin=args.derep_bin,
             tmp_dir=tmp_dir,
             log_file=derep_log_file,
-            derep_min_length=args.derep_min_length,
+            # derep_min_length=args.derep_min_length,
+            threads=args.threads,
         )
     elif derep:
         dereplicate_reads(
@@ -470,7 +485,8 @@ def search_db(args):
             derep_bin=args.derep_bin,
             tmp_dir=tmp_dir,
             log_file=derep_log_file,
-            derep_min_length=args.derep_min_length,
+            # derep_min_length=args.derep_min_length,
+            threads=args.threads,
         )
     # search
     if os.path.exists(derep_reads):

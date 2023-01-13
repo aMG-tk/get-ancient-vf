@@ -206,7 +206,7 @@ defaults = {
     "extend_memory": None,
     "extend_k": 17,
     "tmp": None,
-    "derep_bin": "vsearch",
+    "derep_bin": "seqkit",
     "derep_min_length": 30,
     "createdb_release": "latest",
     "output": "get-ancient-vf-output-search",
@@ -514,17 +514,17 @@ def get_arguments(argv=None):
         dest="derep_bin",
         help=help_msg["derep_bin"],
     )
-    derep_args.add_argument(
-        "--derep-min-length",
-        type=lambda x: int(
-            check_values(
-                x, minval=1, maxval=100000, parser=parser, var="--derep-min-length"
-            )
-        ),
-        default=defaults["derep_min_length"],
-        dest="derep_min_length",
-        help=help_msg["derep_min_length"],
-    )
+    # derep_args.add_argument(
+    #     "--derep-min-length",
+    #     type=lambda x: int(
+    #         check_values(
+    #             x, minval=1, maxval=100000, parser=parser, var="--derep-min-length"
+    #         )
+    #     ),
+    #     default=defaults["derep_min_length"],
+    #     dest="derep_min_length",
+    #     help=help_msg["derep_min_length"],
+    # )
     search_args.add_argument(
         "--mmseqs2-bin",
         default=defaults["mmseqs2_bin"],
