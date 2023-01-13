@@ -805,7 +805,7 @@ def create_output_files(prefix, input, db, fastq):
         "results_log": f"{prefix}.results.{db}.log",
         "results_filtered_prefix": f"{prefix}.results-filtered.{db}",
         "results_filtered_log": f"{prefix}.results-filtered.{db}.log",
-        "results_filtered_mm": f"{prefix}.results-filtered.{db}_multimap.tsv.gz",
+        "results_filtered_mm": f"{prefix}.results-filtered.{db}_no-multimap.tsv.gz",
         "results_filtered_cov": f"{prefix}.results-filtered.{db}_cov-stats.tsv.gz",
         "results_filtered_group_agg": f"{prefix}.results-filtered.{db}_group-abundances-agg.tsv.gz",
         "results_filtered_group": f"{prefix}.results-filtered.{db}_group-abundances.tsv.gz",
