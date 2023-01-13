@@ -1,10 +1,10 @@
 
-# getVF: recruit reads from one of the 120 GTDB bacterial gene markers
+# getVF: recruit reads mapping to Virulence Factor databases
 
 
 [![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/genomewalker/get-ancient-vf?include_prereleases&label=version)](https://github.com/genomewalker/get-ancient-vf/releases) [![get-ancient-vf](https://github.com/genomewalker/get-ancient-vf/workflows/getVF_ci/badge.svg)](https://github.com/genomewalker/get-ancient-vf/actions) [![PyPI](https://img.shields.io/pypi/v/get-ancient-vf)](https://pypi.org/project/get-ancient-vf/) [![Conda](https://img.shields.io/conda/v/genomewalker/get-ancient-vf)](https://anaconda.org/genomewalker/get-ancient-vf)
 
-A simple tool to find reads that might belong to one of the 120 [GTDB](https://gtdb.ecogenomic.org/) bacterial markers. 
+A simple tool to find reads that might map to virulence factors. 
 
 # Installation
 
@@ -52,16 +52,16 @@ pip install -e .
 
 # Usage
 
-getVF has three subcommands `createdb`, `fetch` and `search`. 
+getVF has two subcommands `createdb` and `search`. 
 
 
 ## Create the database structure needed for getVF
 
-The subcommand `createdb` creates the database structure needed for getVF. It will download all the necessary files from GTDB and create the basic data for `fetch` to work. For a complete list of options:
+The subcommand `createdb` creates the database structure needed for getVF. It will download all the necessary files from [VFDB](http://www.mgc.ac.cn/VFs/download.htm) and create the basic data for `search` to work. For a complete list of options:
 
 ```bash
 $ getVF createdb --help
-usage: getVF createdb [-h] [--threads THREADS] --output STR [--tmp STR] [--recreate]
+usage: getVF createdb [-h] [--threads THREADS] --output STR [--tmp STR] [--recreate] [--mmseqs-bin STR]
 
 optional arguments:
   -h, --help         show this help message and exit
@@ -71,137 +71,78 @@ Createdb optional arguments:
   --output STR       Output folder where to store the DB (default: None)
   --tmp STR          Temporary directory location (default: None)
   --recreate         Remove folders if they exist
+  --mmseqs-bin STR   Path to the mmseqs2 executable (default: mmseqs)
 ```
 
 
 One would run the `createdb` subcommand as:
 
 ```bash
-getVF createdb --output v207
+getVF createdb --output VFDB --recreate
 ```
 
-This command will retrieve the data from  GTDB and will process it. The output will be stored in the `v207` folder. It will get the amino acid, nucleotide sequences and HMMs for all marker. It also will download the tree and metadata files. The generated folder can be used with the `fetch` subcommand.
+This command will retrieve the data from VFDB and will process it. The output will be stored in the `VFDB` folder. It will get the amino acid sequences and the metadata for the `core` and `full` DBs. The generated folder can be used with the `search` subcommand.
 
 It will generate the following files:
 
 ```
-v207/
-├── DB
-│   ├── faa [120 entries exceeds filelimit, not opening dir]
-│   ├── fna [120 entries exceeds filelimit, not opening dir]
-│   ├── hmm [168 entries exceeds filelimit, not opening dir]
-│   ├── metadata
-│   │   └── bac120_marker_info.tsv
-│   ├── tree
-│   │   └── bac120.tree
-│   └── version
-└── tmp
-    ├── bac120_marker_genes_reps.tar.gz
-    ├── bac120_msa_marker_info.tsv
-    └── gtdbtk_v2_data.tar.gz
+VFDB
+└── DB
+    ├── core
+    │   ├── VFDB.core.fasta.gz
+    │   ├── VFDB.core.metadata.tsv.gz
+    │   └── mmseqs
+    │       ├── core-db
+    │       ├── core-db.dbtype
+    │       ├── core-db.index
+    │       ├── core-db.lookup
+    │       ├── core-db.source
+    │       ├── core-db_h
+    │       ├── core-db_h.dbtype
+    │       └── core-db_h.index
+    ├── full
+    │   ├── VFDB.full.fasta.gz
+    │   ├── VFDB.full.metadata.tsv.gz
+    │   └── mmseqs
+    │       ├── full-db
+    │       ├── full-db.dbtype
+    │       ├── full-db.index
+    │       ├── full-db.lookup
+    │       ├── full-db.source
+    │       ├── full-db_h
+    │       ├── full-db_h.dbtype
+    │       └── full-db_h.index
+    └── version
 ```
-
-
-## Fetch GTDB data files
-The subcommand `fetch` will collect all the necessary files related to a GTDB gene marker and will process them. For a complete list of options:
-```
-$ getVF fetch --help
-usage: getVF fetch [-h] [--threads THREADS] --marker STR [--outdir STR] [--local-db STR]
-                         [--mmseqs-bin STR] [--hmmalign-bin STR] [--z-score FLOAT] [--aln-format STR]
-
-optional arguments:
-  -h, --help          show this help message and exit
-  --threads THREADS   Number of threads to use (default: 1)
-
-required arguments:
-  --marker STR        One of the 120 GTDB bacterial marker genes (e.g. TIGR00593)
-
-GTDB fetch arguments:
-  --outdir STR        Output folder (default: get-ancient-vf-output-fetch)
-  --local-db STR      Path to a local findMarker DB
-
-GTDB marker gene processing arguments:
-  --mmseqs-bin STR    Path to the mmseqs2 executable (default: mmseqs)
-  --hmmalign-bin STR  Path to the hmmalign executable (default: hmmalign)
-  --z-score FLOAT     Z-score value to filter sequences with too divergent lengths (default: 1.5)
-  --aln-format STR    Alignment format (fasta or phylip-relaxed) (default: phylip-relaxed)
-```
-
-One would run the `fetch` subcommand as:
-
-```bash
-getVF fetch --marker TIGR00593 --threads 16 --aln-format phylip-relaxed --z-score 1.5
-```
-
-This command will retrieve the marker `TIGR00593` from the GTDB and will process it. The output will be stored in the `get-ancient-vf-output-fetch` folder. It will get the amino acid and nucleotide sequences for the marker. First, it will remove all these sequences with a length with a z-score of 1.5 and prune the GTDB phylogenomic tree to contain the selected sequences. Then it will align the sequences using hmmalign at the amino acid level, and back translate the amino acid alignment to a codon alignment. Finally, it will create a MMseqs2 DB for searching the short reads.
-
-It will generate the following files:
-
-```
-get-ancient-vf-output-fetch/
-├── markers
-│   └── TIGR00593
-│       └── 1.5
-│           ├── aln
-│           │   ├── TIGR00593.filt.aa.aln
-│           │   └── TIGR00593.filt.nt.aln
-│           ├── faa
-│           │   ├── TIGR00593.faa
-│           │   └── TIGR00593.filt.faa
-│           ├── fna
-│           │   └── TIGR00593.fna
-│           ├── hmm
-│           │   └── TIGR00593.hmm
-│           ├── mmseqs
-│           │   ├── TIGR00593-db
-│           │   ├── TIGR00593-db.dbtype
-│           │   ├── TIGR00593-db_h
-│           │   ├── TIGR00593-db_h.dbtype
-│           │   ├── TIGR00593-db_h.index
-│           │   ├── TIGR00593-db.index
-│           │   ├── TIGR00593-db.lookup
-│           │   └── TIGR00593-db.source
-│           └── tree
-│               └── TIGR00593.tree
-├── metadata
-│   └── bac120_marker_info.tsv
-└── tree
-    └── bac120.tree
-```
-
-Useful files are the ones in the folder `aln`, `tree` and `mmseqs`.
-
-> If you want to use a local copy of the database you can use the `--local-db` option. If not, it will retrive the data from http://files.metagenomics.eu/get-ancient-vf
 
 ## Search reads against the marker DB
 
-With the subcommand search one can search the reads against the marker DB. Here we can decide between different approaches. By default, the short reads will be extended by a gentle assembly on both ends, then the extended reads will be de-replicated at 100% identity and length; and finally, the reads will be mapped against the marker DB using MMseqs2. The results from the BLASTx search will be filtered using [x-filter](https://github.com/genomewalker/x-filter) to identify the genes with the highest likelihood of being in the sample. Once all steps are done, a fastQ or a fastA file will be generated with the reads that map against the marker DB. 
+With the subcommand search one can search the reads against the marker DB. Here we can decide between different approaches. By default, the short reads will be extended by a gentle assembly on both ends, then the extended reads will be de-replicated at 100% identity and length using [seqkit]() or [vsearch](); and finally, the reads will be mapped against the VFDB using MMseqs2. The results from the BLASTx search will be filtered using [x-filter](https://github.com/genomewalker/x-filter) to identify the genes with the highest likelihood of being in the sample. Once all steps are done, a fastQ or a fastA file will be generated with the reads that map against the VFDB. 
 
 
 For a complete list of options:
 
 ```
 getVF search --help
-usage: getVF search [-h] [--threads THREADS] --input INPUT --marker STR --db-dir STR [--output STR] [--tmp STR]
-                          [--prefix STR] [--z-score FLOAT] [--no-extend] [--extend-bin STR] [--extend-length INT]
-                          [--extend-k INT] [--extend-memory INT] [--no-derep] [--derep-bin STR]
-                          [--derep-min-length DEREP_MIN_LENGTH] [--mmseqs2-bin STR] [--mmseq2-min-length INT]
-                          [--mmseqs2-evalue FLOAT] [--mmseq2-min-seqid FLOAT] [--mmseq2-cov FLOAT] [--mmseq2-cov-mode INT]
-                          [--ancient] [--keep] [--no-filter] [--x-filter-bin STR] [--n-iters INT] [--evalue FLOAT]
-                          [--scale FLOAT] [--bitscore INT] [--filter STR] [--breadth FLOAT]
-                          [--breadth-expected-ratio FLOAT] [--depth FLOAT] [--depth-evenness FLOAT] [--no-trim]
-                          [--extract-bin STR]
+usage: getVF search [-h] [--threads THREADS] --input INPUT --vfdb STR --db-dir STR [--output STR] [--tmp STR]
+                    [--prefix STR] [--z-score FLOAT] [--no-extend] [--extend-bin STR] [--extend-length INT]
+                    [--extend-k INT] [--extend-memory INT] [--no-derep] [--derep-bin STR] [--mmseqs2-bin STR]
+                    [--mmseq2-min-length INT] [--mmseqs2-evalue FLOAT] [--mmseq2-min-seqid FLOAT]
+                    [--mmseq2-cov FLOAT] [--mmseq2-cov-mode INT] [--ancient] [--keep] [--no-filter]
+                    [--x-filter-bin STR] [--n-iters INT] [--evalue FLOAT] [--scale FLOAT] [--bitscore INT]
+                    [--filter STR] [--breadth FLOAT] [--breadth-expected-ratio FLOAT] [--depth FLOAT]
+                    [--depth-evenness FLOAT] [--no-trim] [--no-aggregate] [--extract-bin STR]
 
 optional arguments:
   -h, --help            show this help message and exit
   --threads THREADS     Number of threads to use (default: 1)
 
-required arguments:
+Search required arguments:
   --input INPUT         A FASTA file containing the query sequences
-  --marker STR          One of the 120 GTDB bacterial marker genes (e.g. TIGR00593)
-  --db-dir STR          Folder with the marker data generated by the fetch subcommand
+  --vfdb STR            Which VFDB to use (default: core)
+  --db-dir STR          Folder with the VFDB data generated by the createdb subcommand
 
-optional arguments:
+Search optional arguments:
   --output STR          Output folder to write the search results (default: get-ancient-vf-output-search)
   --tmp STR             Path to the temporary directory (default: None)
   --prefix STR          Prefix used for the output files (default: None)
@@ -219,9 +160,7 @@ Read extension arguments:
   --extend-memory INT   How much memory to use for the extension (default: None)
 
 Read dereplication arguments:
-  --derep-bin STR       Path to the the executable for the de-replication step (default: vsearch)
-  --derep-min-length DEREP_MIN_LENGTH
-                        Minimum read length for the de-replication step (default: 30)
+  --derep-bin STR       Path to the the executable for the de-replication step (default: seqkit)
 
 MMseqs2 search arguments:
   --mmseqs2-bin STR     Path to the mmseqs2 executable (default: mmseqs)
@@ -241,8 +180,8 @@ X-filter processing arguments:
   --evalue FLOAT        Evalue where to filter the results (default: 1e-05)
   --scale FLOAT         Scale to select the best weithing alignments (default: 0.9)
   --bitscore INT        Bitscore where to filter the results (default: 60)
-  --filter STR          Which filter to use. Possible values are: breadth, depth, depth_evenness, breadth_expected_ratio
-                        (default: breadth_expected_ratio)
+  --filter STR          Which filter to use. Possible values are: breadth, depth, depth_evenness,
+                        breadth_expected_ratio (default: breadth_expected_ratio)
   --breadth FLOAT       Breadth of the coverage (default: 0.5)
   --breadth-expected-ratio FLOAT
                         Expected breath to observed breadth ratio (scaled) (default: 0.5)
@@ -250,11 +189,10 @@ X-filter processing arguments:
   --depth-evenness FLOAT
                         Reference with higher evenness will be removed (default: 1.0)
   --no-trim             Deactivate the trimming for the coverage calculations
+  --no-aggregate        Aggregate the results by virulence factor
 
-Extract marker reads arguments:
+Extract VFDB mapping reads arguments:
   --extract-bin STR     Path to the the executable for the read extraction step (default: filterbyname.sh)
-  ```
-
 
 ```
 get-ancient-vf-output-search/

@@ -16,7 +16,7 @@ import time
 import tarfile
 import shutil
 import pathlib
-from get_vf.defaults import CORE_DB, FULL_DB
+from get_vf.defaults import VFDB, vfdbs
 import logging
 from datetime import date
 import gzip
@@ -243,35 +243,24 @@ def createdb(args):
     with open(version_file, "w") as f:
         f.write(f"{today_date}")
     # Download the files to the tmp directory
-    log.info("Downloading VFDB core database")
-    download(CORE_DB["url"], tmp_dir)
-    log.info("Downloading VFDB full database")
-    download(FULL_DB["url"], tmp_dir)
+    for db in vfdbs:
+        log.info(f"Downloading VFDB {db} database")
+        download(VFDB[db]["url"], tmp_dir)
 
     # Create metadata file
     log.info("Processing files")
-    create_db_files(
-        input=f"{tmp_dir}/{CORE_DB['filename']}",
-        faa=pathlib.Path(outdir, CORE_DB["faa"]),
-        metadata=pathlib.Path(outdir, CORE_DB["metadata"]),
-    )
-    create_db_files(
-        input=f"{tmp_dir}/{FULL_DB['filename']}",
-        faa=pathlib.Path(outdir, FULL_DB["faa"]),
-        metadata=pathlib.Path(outdir, FULL_DB["metadata"]),
-    )
-    create_mmseqs_db(
-        db_dir=core_dir,
-        db="core",
-        faa=pathlib.Path(outdir, CORE_DB["faa"]),
-        mmseqs_bin=args.mmseqs_bin,
-    )
-    create_mmseqs_db(
-        db_dir=core_dir,
-        db="full",
-        faa=pathlib.Path(outdir, FULL_DB["faa"]),
-        mmseqs_bin=args.mmseqs_bin,
-    )
+    for db in vfdbs:
+        create_db_files(
+            input=f"{tmp_dir}/{VFDB[db]['filename']}",
+            faa=pathlib.Path(outdir, db, VFDB[db]["faa"]),
+            metadata=pathlib.Path(outdir, db, VFDB[db]["metadata"]),
+        )
+        create_mmseqs_db(
+            db_dir=core_dir,
+            db=db,
+            faa=pathlib.Path(outdir, db, VFDB[db]["faa"]),
+            mmseqs_bin=args.mmseqs_bin,
+        )
 
     # Delete the temporary directory
     log.info("Removing temporary directory")

@@ -278,6 +278,7 @@ help_msg = {
     "mapping_file": "File with mappings to genes for aggregation",
     "iters": "Number of iterations for the FAMLI-like filtering",
     "scale": "Scale to select the best weithing alignments",
+    "agg": "Aggregate the results by virulence factor",
     "help": "Help message",
     "debug": f"Print debug messages",
     "version": f"Print program version",
@@ -713,6 +714,13 @@ def get_arguments(argv=None):
         help=help_msg["trim"],
         default=argparse.SUPPRESS,
     )
+    filter_args.add_argument(
+        "--no-aggregate",
+        dest="agg",
+        action="store_true",
+        help=help_msg["agg"],
+        default=argparse.SUPPRESS,
+    )
     extract_args.add_argument(
         "--extract-bin",
         default=defaults["extract_bin"],
@@ -739,6 +747,8 @@ def get_arguments(argv=None):
         args.recreate = False
     if not hasattr(args, "local_db"):
         args.local_db = False
+    if not hasattr(args, "agg"):
+        args.agg = True
 
     if args.action is not None and len(sys.argv) == 2:
         args = parser.parse_args([args.action, "-h"])
@@ -797,6 +807,8 @@ def create_output_files(prefix, input, db, fastq):
         "results_filtered_log": f"{prefix}.results-filtered.{db}.log",
         "results_filtered_mm": f"{prefix}.results-filtered.{db}_multimap.tsv.gz",
         "results_filtered_cov": f"{prefix}.results-filtered.{db}_cov-stats.tsv.gz",
+        "results_filtered_group_agg": f"{prefix}.results-filtered.{db}_group-abundances-agg.tsv.gz",
+        "results_filtered_group": f"{prefix}.results-filtered.{db}_group-abundances.tsv.gz",
         "reads_db_log": f"{prefix}.reads.{db}.log",
         "reads_db": f"{prefix}.reads.{db}.{extension}.gz",
     }

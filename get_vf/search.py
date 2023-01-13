@@ -20,6 +20,7 @@ from get_vf.utils import (
     get_date_dir,
     delete_folder,
 )
+from get_vf.defaults import VFDB, vfdbs
 import gzip
 import shutil
 from contextlib import ExitStack
@@ -275,65 +276,130 @@ def filter_results(
     trim,
     threads,
     output,
+    metadata,
+    aggregate,
 ):
     logging.info(f"Filtering VFDB {db} BLASTx results")
     if trim:
-        cmd = [
-            xfilter_bin,
-            "--input",
-            results,
-            "--prefix",
-            prefix,
-            "--n-iters",
-            str(n_iters),
-            "--evalue",
-            str(evalue),
-            "--scale",
-            str(scale),
-            "--bitscore",
-            str(bitscore),
-            "--filter",
-            str(fltr),
-            "--breadth",
-            str(breadth),
-            "--breadth-expected-ratio",
-            str(breadth_expected_ratio),
-            "--depth",
-            str(depth),
-            "--depth-evenness",
-            str(depth_evenness),
-            "--threads",
-            str(threads),
-        ]
+        if aggregate:
+            cmd = [
+                xfilter_bin,
+                "--input",
+                results,
+                "--prefix",
+                prefix,
+                "--n-iters",
+                str(n_iters),
+                "--evalue",
+                str(evalue),
+                "--scale",
+                str(scale),
+                "--bitscore",
+                str(bitscore),
+                "--filter",
+                str(fltr),
+                "--breadth",
+                str(breadth),
+                "--breadth-expected-ratio",
+                str(breadth_expected_ratio),
+                "--depth",
+                str(depth),
+                "--depth-evenness",
+                str(depth_evenness),
+                "--threads",
+                str(threads),
+            ]
+        else:
+            cmd = [
+                xfilter_bin,
+                "--input",
+                results,
+                "--prefix",
+                prefix,
+                "--n-iters",
+                str(n_iters),
+                "--evalue",
+                str(evalue),
+                "--scale",
+                str(scale),
+                "--bitscore",
+                str(bitscore),
+                "--filter",
+                str(fltr),
+                "--breadth",
+                str(breadth),
+                "--breadth-expected-ratio",
+                str(breadth_expected_ratio),
+                "--depth",
+                str(depth),
+                "--depth-evenness",
+                str(depth_evenness),
+                "--threads",
+                str(threads),
+                "-m",
+                metadata,
+            ]
     else:
-        cmd = [
-            xfilter_bin,
-            "--input",
-            results,
-            "--prefix",
-            prefix,
-            "--n-iters",
-            str(n_iters),
-            "--evalue",
-            str(evalue),
-            "--scale",
-            str(scale),
-            "--bitscore",
-            str(bitscore),
-            "--filter",
-            str(fltr),
-            "--breadth",
-            str(breadth),
-            "--breadth-expected-ratio",
-            str(breadth_expected_ratio),
-            "--depth",
-            str(depth),
-            "--depth-evenness",
-            str(depth_evenness),
-            "--threads",
-            str(threads),
-            "--no-trim",
-        ]
+        if aggregate:
+            cmd = [
+                xfilter_bin,
+                "--input",
+                results,
+                "--prefix",
+                prefix,
+                "--n-iters",
+                str(n_iters),
+                "--evalue",
+                str(evalue),
+                "--scale",
+                str(scale),
+                "--bitscore",
+                str(bitscore),
+                "--filter",
+                str(fltr),
+                "--breadth",
+                str(breadth),
+                "--breadth-expected-ratio",
+                str(breadth_expected_ratio),
+                "--depth",
+                str(depth),
+                "--depth-evenness",
+                str(depth_evenness),
+                "--threads",
+                str(threads),
+                "--no-trim",
+            ]
+        else:
+            cmd = [
+                xfilter_bin,
+                "--input",
+                results,
+                "--prefix",
+                prefix,
+                "--n-iters",
+                str(n_iters),
+                "--evalue",
+                str(evalue),
+                "--scale",
+                str(scale),
+                "--bitscore",
+                str(bitscore),
+                "--filter",
+                str(fltr),
+                "--breadth",
+                str(breadth),
+                "--breadth-expected-ratio",
+                str(breadth_expected_ratio),
+                "--depth",
+                str(depth),
+                "--depth-evenness",
+                str(depth_evenness),
+                "--threads",
+                str(threads),
+                "--no-trim",
+                "-m",
+                metadata,
+            ]
     proc = subprocess.Popen(
         cmd,
         cwd=output,
@@ -420,6 +486,8 @@ def search_db(args):
         "mmseqs",
         f"{args.db}-db",
     )
+
+    metadata = pathlib.Path(args.db_dir, args.db, VFDB[args.db]["metadata"])
     if not os.path.exists(vfdb_db):
         logging.error(
             f"The DB for the {args.db} VFDB does not exist. Please run the createdb subcommand to create it."
@@ -553,9 +621,13 @@ def search_db(args):
             xfilter_bin=args.xfilter_bin,
             prefix=output_files["results_filtered_prefix"],
             output=output,
+            metadata=metadata,
         )
-        cov_file = pathlib.Path(output, output_files["results_filtered_cov"])
-        mm_file = pathlib.Path(output, output_files["results_filtered_mm"])
+        cov_file = pathlib.Path(output, args.db, output_files["results_filtered_cov"])
+        mm_file = pathlib.Path(output, args.db, output_files["results_filtered_mm"])
+        # group_file = pathlib.Path(output, args.db, output_files["results_filtered_group"])
+        # group_file_agg = pathlib.Path(output, args.db, output_files["results_filtered_group_agg"])
+
         if not os.path.exists(cov_file) or not os.path.exists(mm_file):
             logging.error("Cannot find filtered results. Exiting.")
             exit(1)
