@@ -120,7 +120,7 @@ def dereplicate_reads(
         stdout, stderr = proc.communicate()
 
     elif derep_bin == "seqkit":
-        logging.info(f"Dereplicating reads with {derep_bin}]")
+        logging.info(f"Dereplicating reads with {derep_bin}")
         proc = subprocess.Popen(
             [
                 derep_bin,
@@ -644,18 +644,18 @@ def search_db(args):
                     tmp_dir=tmp_dir,
                     log_file=extract_log_file,
                 )
-        else:
-            if os.path.exists(results_gz):
-                extract_reads(
-                    results=results_gz,
-                    db=args.db,
-                    output=reads_db,
-                    threads=args.threads,
-                    reads=args.input,
-                    extract_bin=args.extract_bin,
-                    tmp_dir=tmp_dir,
-                    log_file=extract_log_file,
-                )
+            else:
+                if os.path.exists(results_gz):
+                    extract_reads(
+                        results=results_gz,
+                        db=args.db,
+                        output=reads_db,
+                        threads=args.threads,
+                        reads=args.input,
+                        extract_bin=args.extract_bin,
+                        tmp_dir=tmp_dir,
+                        log_file=extract_log_file,
+                    )
 
     # Clean up temporary
     if args.no_keep and os.path.exists(tmp_dir):

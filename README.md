@@ -123,15 +123,14 @@ With the subcommand search one can search the reads against the marker DB. Here 
 For a complete list of options:
 
 ```
-getVF search --help
 usage: getVF search [-h] [--threads THREADS] --input INPUT --vfdb STR --db-dir STR [--output STR] [--tmp STR]
-                    [--prefix STR] [--z-score FLOAT] [--no-extend] [--extend-bin STR] [--extend-length INT]
-                    [--extend-k INT] [--extend-memory INT] [--no-derep] [--derep-bin STR] [--mmseqs2-bin STR]
+                    [--prefix STR] [--no-extend] [--extend-bin STR] [--extend-length INT] [--extend-k INT]
+                    [--extend-memory INT] [--no-derep] [--derep-bin STR] [--mmseqs2-bin STR]
                     [--mmseq2-min-length INT] [--mmseqs2-evalue FLOAT] [--mmseq2-min-seqid FLOAT]
                     [--mmseq2-cov FLOAT] [--mmseq2-cov-mode INT] [--ancient] [--keep] [--no-filter]
                     [--x-filter-bin STR] [--n-iters INT] [--evalue FLOAT] [--scale FLOAT] [--bitscore INT]
                     [--filter STR] [--breadth FLOAT] [--breadth-expected-ratio FLOAT] [--depth FLOAT]
-                    [--depth-evenness FLOAT] [--no-trim] [--no-aggregate] [--extract-bin STR]
+                    [--depth-evenness FLOAT] [--no-trim] [--no-aggregate] [--extract] [--extract-bin STR]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -146,7 +145,6 @@ Search optional arguments:
   --output STR          Output folder to write the search results (default: get-ancient-vf-output-search)
   --tmp STR             Path to the temporary directory (default: None)
   --prefix STR          Prefix used for the output files (default: None)
-  --z-score FLOAT       Z-score value to filter sequences with too divergent lengths (default: 1.5)
   --no-extend           Disable read extension
   --no-derep            Disable de-replication of identical reads
   --ancient             Use mmseqs2 aDNA optimized parameters
@@ -181,7 +179,7 @@ X-filter processing arguments:
   --scale FLOAT         Scale to select the best weithing alignments (default: 0.9)
   --bitscore INT        Bitscore where to filter the results (default: 60)
   --filter STR          Which filter to use. Possible values are: breadth, depth, depth_evenness,
-                        breadth_expected_ratio (default: breadth_expected_ratio)
+                        breadth_expected_ratio (default: depth_evenness)
   --breadth FLOAT       Breadth of the coverage (default: 0.5)
   --breadth-expected-ratio FLOAT
                         Expected breath to observed breadth ratio (scaled) (default: 0.5)
@@ -192,20 +190,17 @@ X-filter processing arguments:
   --no-aggregate        Aggregate the results by virulence factor
 
 Extract VFDB mapping reads arguments:
+  --extract             Extract the reads that match the VFDB
   --extract-bin STR     Path to the the executable for the read extraction step (default: filterbyname.sh)
+```
+
+One would run the following command to search the reads against the VFDB:
+
+```bash
+getVF search --input test.fq.gz --vfdb core --db-dir VFDB/DB/ --threads 8 --ancient --filter depth_evenness --depth-evenness 1.0
+```
+
+The output folder will contain the following files:
 
 ```
-get-ancient-vf-output-search/
-└── TIGR00593
-    ├── cr9_59.reads-marker.TIGR00593.fq.gz
-    ├── cr9_59.results-filtered.TIGR00593_cov-stats.tsv.gz
-    ├── cr9_59.results-filtered.TIGR00593_multimap.tsv.gz
-    ├── cr9_59.results.TIGR00593.tsv.gz
-    └── logs
-        ├── cr9_59.derep.log
-        ├── cr9_59.extend.log
-        ├── cr9_59.reads-marker.TIGR00593.log
-        └── cr9_59.results.TIGR00593.log
-
-2 directories, 8 files
 ```

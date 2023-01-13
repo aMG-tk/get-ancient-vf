@@ -198,9 +198,6 @@ defaults = {
     "threads": 1,
     "outdir": "get-ancient-vf-output-fetch",
     "mmseqs_bin": "mmseqs",
-    "hmmalign_bin": "hmmalign",
-    "aln_format": "phylip-relaxed",
-    "zscore": 1.5,
     "extend_bin": "tadpole.sh",
     "extend_length": 100,
     "extend_memory": None,
@@ -228,7 +225,7 @@ defaults = {
     "mapping_file": None,
     "iters": 25,
     "scale": 0.9,
-    "filter": "breadth_expected_ratio",
+    "filter": "depth_evenness",
     "xfilter_bin": "xFilter",
     "extract_bin": "filterbyname.sh",
     "vfdb": "core",
@@ -242,8 +239,6 @@ help_msg = {
     "vfdb": "Which VFDB to use",
     "hmmalign_bin": "Path to the hmmalign executable",
     "mmseqs_bin": "Path to the mmseqs2 executable",
-    "aln_format": "Alignment format (fasta or phylip-relaxed)",
-    "zscore": "Z-score value to filter sequences with too divergent lengths",
     "no_extend": "Disable read extension",
     "extend_bin": "Path to the the executable for the extension step",
     "extend_length": "How much to extend in both ends",
@@ -447,16 +442,6 @@ def get_arguments(argv=None):
         default=defaults["prefix"],
         dest="prefix",
         help=help_msg["prefix"],
-    )
-    search_optional_args.add_argument(
-        "--z-score",
-        type=lambda x: float(
-            check_values(x, minval=0, maxval=1000, parser=parser, var="--z-score")
-        ),
-        default=defaults["zscore"],
-        metavar="FLOAT",
-        dest="zscore",
-        help=help_msg["zscore"],
     )
     search_optional_args.add_argument(
         "--no-extend",
@@ -723,19 +708,19 @@ def get_arguments(argv=None):
         default=argparse.SUPPRESS,
     )
     extract_args.add_argument(
+        "--extract",
+        dest="extract",
+        action="store_true",
+        help=help_msg["extract"],
+        default=argparse.SUPPRESS,
+    )
+    extract_args.add_argument(
         "--extract-bin",
         default=defaults["extract_bin"],
         metavar="STR",
         type=lambda x: is_executable(parser, x, "--extract-bin"),
         dest="extract_bin",
         help=help_msg["extract_bin"],
-    )
-    extract_args.add_argument(
-        "--extract",
-        dest="extract",
-        action="store_true",
-        help=help_msg["extract"],
-        default=argparse.SUPPRESS,
     )
     args = parser.parse_args(None if sys.argv[1:] else ["-h"])
 
