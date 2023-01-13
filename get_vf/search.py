@@ -308,6 +308,8 @@ def filter_results(
                 str(depth_evenness),
                 "--threads",
                 str(threads),
+                "-m",
+                metadata,
             ]
         else:
             cmd = [
@@ -336,8 +338,6 @@ def filter_results(
                 str(depth_evenness),
                 "--threads",
                 str(threads),
-                "-m",
-                metadata,
             ]
     else:
         if aggregate:
@@ -368,6 +368,8 @@ def filter_results(
                 "--threads",
                 str(threads),
                 "--no-trim",
+                "-m",
+                metadata,
             ]
         else:
             cmd = [
@@ -397,8 +399,6 @@ def filter_results(
                 "--threads",
                 str(threads),
                 "--no-trim",
-                "-m",
-                metadata,
             ]
     proc = subprocess.Popen(
         cmd,
@@ -601,8 +601,6 @@ def search_db(args):
     # filter
     extract_log_file = pathlib.Path(log_dir, output_files["reads_db_log"])
     reads_db = pathlib.Path(output, output_files["reads_db"])
-    print(args.agg)
-    exit()
     if fltr and os.path.exists(results_gz):
         filter_log_file = pathlib.Path(log_dir, output_files["results_filtered_log"])
         filter_results(
@@ -630,7 +628,7 @@ def search_db(args):
         mm_file = pathlib.Path(output, args.db, output_files["results_filtered_mm"])
         # group_file = pathlib.Path(output, args.db, output_files["results_filtered_group"])
         # group_file_agg = pathlib.Path(output, args.db, output_files["results_filtered_group_agg"])
-
+        print(cov_file)
         if not os.path.exists(cov_file) or not os.path.exists(mm_file):
             logging.error("Cannot find filtered results. Exiting.")
             exit(1)
