@@ -622,6 +622,7 @@ def search_db(args):
             prefix=output_files["results_filtered_prefix"],
             output=output,
             metadata=metadata,
+            aggregate=args.agg,
         )
         cov_file = pathlib.Path(output, args.db, output_files["results_filtered_cov"])
         mm_file = pathlib.Path(output, args.db, output_files["results_filtered_mm"])
