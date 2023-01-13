@@ -91,7 +91,7 @@ def dereplicate_reads(
     log_file,
     db,
     # derep_min_length,
-    threads
+    threads,
 ):
     # vsearch --derep_fulllength ${i} --output - --minseqlength 30 --strand both
     output = pathlib.Path(tmp_dir, output)
@@ -131,18 +131,23 @@ def dereplicate_reads(
                 "-o",
                 output,
             ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            encoding="utf-8",
+        )
+        stdout, stderr = proc.communicate()
 
-        with open(log_file, "w") as f:
-            for row in stderr.split("\n"):
-                f.write(row + "\n")
-        if proc.returncode != 0:
-            # rgx = re.compile("ERROR")
-            # for line in stdout.splitlines():
-            #     if rgx.search(line):
-            #         error = line.replace("ERROR: ", "")
-            logging.error(f"Error dereplicating reads for DB: {db}")
-            logging.error(stderr)
-            exit(1)
+    with open(log_file, "w") as f:
+        for row in stderr.split("\n"):
+            f.write(row + "\n")
+    if proc.returncode != 0:
+        # rgx = re.compile("ERROR")
+        # for line in stdout.splitlines():
+        #     if rgx.search(line):
+        #         error = line.replace("ERROR: ", "")
+        logging.error(f"Error dereplicating reads for DB: {db}")
+        logging.error(stderr)
+        exit(1)
     return output
 
 
