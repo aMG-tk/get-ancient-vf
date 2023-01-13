@@ -97,7 +97,7 @@ def dereplicate_reads(
             derep_bin,
             "--fastx_uniques",
             reads,
-            "--output",
+            "--fastqout",
             output,
             "--strand",
             "both",

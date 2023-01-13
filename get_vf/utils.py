@@ -776,7 +776,7 @@ def create_output_files(prefix, input, db, fastq):
     out_files = {
         "extended_reads": f"{prefix}.extended.fa.gz",
         "extend_reads_log": f"{prefix}.extend.log",
-        "derep_reads": f"{prefix}.derep.tsv.gz",
+        "derep_reads": f"{prefix}.derep.fq.gz",
         "derep_reads_log": f"{prefix}.derep.log",
         "results": f"{prefix}.results.{db}.tsv",
         "results_gz": f"{prefix}.results.{db}.tsv.gz",
