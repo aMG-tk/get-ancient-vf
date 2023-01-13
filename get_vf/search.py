@@ -125,7 +125,7 @@ def dereplicate_reads(
     return output
 
 
-def search_db(
+def search_mmseqs(
     reads,
     db,
     vfdb_db,
@@ -477,7 +477,7 @@ def search_db(args):
     results_gz = pathlib.Path(output, output_files["results_gz"])
     search_log_file = pathlib.Path(log_dir, output_files["results_log"])
     if not os.path.exists(results_gz):
-        search_db(
+        search_mmseqs(
             reads=reads,
             db=args.db,
             vfdb_db=vfdb_db,
