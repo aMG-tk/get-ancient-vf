@@ -203,4 +203,17 @@ getVF search --input test.fq.gz --vfdb core --db-dir VFDB/DB/ --threads 8 --anci
 The output folder will contain the following files:
 
 ```
+get-ancient-vf-output-search/
+└── core
+    ├── logs
+    │   ├── test.derep.log
+    │   ├── test.extend.log
+    │   ├── test.reads.core.log
+    │   └── test.results.core.log
+    ├── test.reads.core.fq.gz
+    ├── test.results.core.tsv.gz
+    ├── test.results-filtered.core_cov-stats.tsv.gz
+    ├── test.results-filtered.core_group-abundances-agg.tsv.gz
+    ├── test.results-filtered.core_group-abundances.tsv.gz
+    └── test.results-filtered.core_no-multimap.tsv.gz
 ```
