@@ -398,7 +398,7 @@ def get_arguments(argv=None):
         metavar="STR",
         default=defaults["vfdb"],
         type=lambda x: is_in_vfdb(parser, x, "--vfdb"),
-        dest="vfdb",
+        dest="db",
         help=help_msg["vfdb"],
     )
     search_required_args.add_argument(
