@@ -624,12 +624,8 @@ def search_db(args):
             metadata=metadata,
             aggregate=args.agg,
         )
-        cov_file = pathlib.Path(
-            output, args.db, output_files["results_filtered_cov"]
-        ).resolve()
-        mm_file = pathlib.Path(
-            output, args.db, output_files["results_filtered_mm"]
-        ).resolve()
+        cov_file = pathlib.Path(output, output_files["results_filtered_cov"]).resolve()
+        mm_file = pathlib.Path(output, output_files["results_filtered_mm"]).resolve()
         # group_file = pathlib.Path(output, args.db, output_files["results_filtered_group"])
         # group_file_agg = pathlib.Path(output, args.db, output_files["results_filtered_group_agg"])
         print(cov_file)
