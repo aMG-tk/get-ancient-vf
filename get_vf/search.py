@@ -84,44 +84,51 @@ def extend_reads(
 
 
 def dereplicate_reads(
-    derep_bin, reads, output, tmp_dir, log_file, db, derep_min_length
+    derep_bin,
+    reads,
+    output,
+    tmp_dir,
+    log_file,
+    db,
+    derep_min_length,
 ):
     # vsearch --derep_fulllength ${i} --output - --minseqlength 30 --strand both
     output = pathlib.Path(tmp_dir, output)
     if output.exists():
         logging.info("Dereplicated reads already found. Skipping.")
         return output
-    logging.info(f"Dereplicating reads [length:{derep_min_length}]")
-    proc = subprocess.Popen(
-        [
-            derep_bin,
-            "--fastx_uniques",
-            reads,
-            "--fastqout",
-            output,
-            "--strand",
-            "both",
-            "--minseqlength",
-            str(derep_min_length),
-        ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        encoding="utf-8",
-    )
-    stdout, stderr = proc.communicate()
+    if derep_bin == "vsearch":
+        logging.info(f"Dereplicating reads [length:{derep_min_length}]")
+        proc = subprocess.Popen(
+            [
+                derep_bin,
+                "--fastx_uniques",
+                reads,
+                "--fastqout",
+                output,
+                "--strand",
+                "both",
+                "--minseqlength",
+                str(derep_min_length),
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            encoding="utf-8",
+        )
+        stdout, stderr = proc.communicate()
 
-    with open(log_file, "w") as f:
-        for row in stderr.split("\n"):
-            f.write(row + "\n")
+        with open(log_file, "w") as f:
+            for row in stderr.split("\n"):
+                f.write(row + "\n")
 
-    if proc.returncode != 0:
-        # rgx = re.compile("ERROR")
-        # for line in stdout.splitlines():
-        #     if rgx.search(line):
-        #         error = line.replace("ERROR: ", "")
-        logging.error(f"Error dereplicating reads for DB: {db}")
-        logging.error(stderr)
-        exit(1)
+        if proc.returncode != 0:
+            # rgx = re.compile("ERROR")
+            # for line in stdout.splitlines():
+            #     if rgx.search(line):
+            #         error = line.replace("ERROR: ", "")
+            logging.error(f"Error dereplicating reads for DB: {db}")
+            logging.error(stderr)
+            exit(1)
     return output
 
 

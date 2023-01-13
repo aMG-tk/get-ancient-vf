@@ -117,7 +117,7 @@ def create_db_files(input, faa, metadata):
                     info = parse_header(record.description)
                     # If the header was successfully parsed, write the extracted information to the output file
                     if info:
-                        string = f"{info[0]}\t{info[2]}\t{info[1]}\t{info[3]}\n"
+                        string = f"{info[0]}\t{info[2]}\n"
                         record.id = info[0]
                         record.description = ""
                         output_tsv.write(string)

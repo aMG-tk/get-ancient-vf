@@ -10,7 +10,7 @@ from os import devnull
 from get_vf import __version__
 from itertools import chain
 from pathlib import Path
-from get_vf.defaults import vfdbs
+from get_vf.defaults import vfdbs, derep_bins
 
 # from get_vf.defaults import markers, aln_formats, gtdb_releases
 from Bio import SeqIO
@@ -145,6 +145,18 @@ def is_in_vfdb(parser, arg, var):
         parser.error(
             "argument %s: Invalid value %s.\nDB has to be one of %s"
             % (var, arg, convert_list_to_str(vfdbs))
+        )
+
+
+def is_in_derep_bins(parser, arg, var):
+    derep_exec = Path(arg).name
+    if derep_exec in derep_bins:
+        is_executable(parser, arg, var)
+        return arg
+    else:
+        parser.error(
+            "argument %s: Invalid value %s.\De-replication binary has to be one of %s"
+            % (var, arg, convert_list_to_str(derep_bins))
         )
 
 
@@ -498,7 +510,7 @@ def get_arguments(argv=None):
         "--derep-bin",
         default=defaults["derep_bin"],
         metavar="STR",
-        type=lambda x: is_executable(parser, x, "--derep-bin"),
+        type=lambda x: is_in_derep_bins(parser, x, "--derep-bin"),
         dest="derep_bin",
         help=help_msg["derep_bin"],
     )

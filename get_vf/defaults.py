@@ -15,3 +15,5 @@ FULL_DB = {
 }
 
 vfdbs = ["core", "full"]
+
+derep_bins = ["vsearch", "seqkit"]
