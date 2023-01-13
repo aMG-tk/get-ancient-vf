@@ -601,6 +601,8 @@ def search_db(args):
     # filter
     extract_log_file = pathlib.Path(log_dir, output_files["reads_db_log"])
     reads_db = pathlib.Path(output, output_files["reads_db"])
+    print(args.agg)
+    exit()
     if fltr and os.path.exists(results_gz):
         filter_log_file = pathlib.Path(log_dir, output_files["results_filtered_log"])
         filter_results(
