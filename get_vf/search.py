@@ -628,8 +628,8 @@ def search_db(args):
         mm_file = pathlib.Path(output, output_files["results_filtered_mm"]).resolve()
         # group_file = pathlib.Path(output, args.db, output_files["results_filtered_group"])
         # group_file_agg = pathlib.Path(output, args.db, output_files["results_filtered_group_agg"])
-        print(mm_file)
-        print(cov_file)
+        print(os.path.exists(mm_file))
+        print(os.path.exists(cov_file))
         if not os.path.exists(cov_file) or not os.path.exists(mm_file):
             logging.error("Cannot find filtered results. Exiting.")
             exit(1)
